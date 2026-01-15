@@ -1,0 +1,218 @@
+-- LocalScript
+
+-- SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local playerName = player.Name
+
+------------------------------------------------------------
+-- HELPERS (UNCHANGED LOGIC)
+------------------------------------------------------------
+local function findPlayerModel()
+	local killers = workspace:FindFirstChild("Killers")
+	if killers then
+		local m = killers:FindFirstChild(playerName)
+		if m then return m end
+	end
+
+	local survivors = workspace:FindFirstChild("Survivors")
+	if survivors then
+		local m = survivors:FindFirstChild(playerName)
+		if m then return m end
+	end
+
+	return nil
+end
+
+local function getSprintStuffChild(childName, className)
+	local model = findPlayerModel()
+	if not model then return nil end
+
+	local sprintStuff = model:FindFirstChild("SprintStuff")
+	if not sprintStuff then return nil end
+
+	local obj = sprintStuff:FindFirstChild(childName)
+	if not obj then return nil end
+
+	if className and not obj:IsA(className) then return nil end
+	return obj
+end
+
+------------------------------------------------------------
+-- RAYFIELD UI
+------------------------------------------------------------
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+	Name = "LoL script",
+	LoadingTitle = "Blah blah blah",
+	LoadingSubtitle = "hihihihihihhihihihihihihi",
+	ConfigurationSaving = { Enabled = false }
+})
+
+local Tab = Window:CreateTab("Main", 0)
+
+------------------------------------------------------------
+-- TOGGLE: AUTO DOUBLEREGEN
+------------------------------------------------------------
+local autoDoubleRegen = false
+
+Tab:CreateToggle({
+	Name = "Auto DoubleRegen",
+	CurrentValue = false,
+	Callback = function(value)
+		autoDoubleRegen = value
+	end,
+})
+
+------------------------------------------------------------
+-- TEXTBOX: MAX STAMINA CHANGER
+------------------------------------------------------------
+local maxStaminaValue = nil
+
+Tab:CreateInput({
+	Name = "MaxStamina changer",
+	PlaceholderText = "Enter number...",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(text)
+		local val = tonumber(text)
+		if not val then return end
+		maxStaminaValue = val
+
+		local maxStamina = getSprintStuffChild("MaxStamina")
+		if maxStamina and (maxStamina:IsA("NumberValue") or maxStamina:IsA("IntValue")) then
+			maxStamina.Value = val
+		end
+	end,
+})
+
+------------------------------------------------------------
+-- TOGGLE: ANTI STAMINA REGEN PAUSE
+------------------------------------------------------------
+local antiPauseEnabled = false
+
+Tab:CreateToggle({
+	Name = "anti stamina regen pause",
+	CurrentValue = false,
+	Callback = function(value)
+		antiPauseEnabled = value
+	end,
+})
+
+------------------------------------------------------------
+-- HEARTBEAT ENFORCEMENT (UNCHANGED)
+------------------------------------------------------------
+RunService.Heartbeat:Connect(function()
+	-- Auto DoubleRegen
+	if autoDoubleRegen then
+		local dr = getSprintStuffChild("DoubleRegen", "BoolValue")
+		if dr and dr.Value == false then
+			dr.Value = true
+		end
+	end
+
+	-- Anti stamina regen pause
+	if antiPauseEnabled then
+		local disabled = getSprintStuffChild("DisabledStamina", "BoolValue")
+		if disabled and disabled.Value == true then
+			disabled.Value = false
+		end
+
+		local regen = getSprintStuffChild("RegenStamina", "BoolValue")
+		if regen and regen.Value == false then
+			regen.Value = true
+		end
+	end
+end)
+
+-- state variable
+local lockMaxStamina = false
+
+-- toggle
+Tab:CreateToggle({
+	Name = "Auto set MaxStamina",
+	CurrentValue = false,
+	Callback = function(value)
+		lockMaxStamina = value
+	end,
+})
+
+-- enforcement loop (add once if you don't already have one)
+RunService.Heartbeat:Connect(function()
+	if not lockMaxStamina then return end
+	if not maxStaminaValue then return end
+
+	local maxStamina = getSprintStuffChild("MaxStamina")
+	if maxStamina and (maxStamina:IsA("NumberValue") or maxStamina:IsA("IntValue")) then
+		if maxStamina.Value ~= maxStaminaValue then
+			maxStamina.Value = maxStaminaValue
+		end
+	end
+end)
+
+local Section = Tab:CreateSection("Ability decks")
+
+local Button = Tab:CreateButton({
+   Name = "Gunslinger",
+   Callback = function()
+   local args = {
+    1,
+    "Punch",
+    "Revolver"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("SurvActions"):FireServer(unpack(args))
+local args = {
+    7,
+    true,
+    "Punch",
+    "Revolver",
+    "rbxassetid://73130054435684",
+    "rbxassetid://121722959097329"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "LiveDroid's worst nightmare",
+   Callback = function()
+   local args = {
+    1,
+    "Block",
+    "Revolver"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("SurvActions"):FireServer(unpack(args))
+local args = {
+    7,
+    true,
+    "Block",
+    "Revolver",
+    "rbxassetid://114764935401015",
+    "rbxassetid://121722959097329"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "The Taunter",
+   Callback = function()
+   local args = {
+    1,
+    "Punch",
+    "Taunt"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("SurvActions"):FireServer(unpack(args))
+local args = {
+    7,
+    true,
+    "Punch",
+    "Taunt",
+    "rbxassetid://73130054435684",
+    "rbxassetid://122433943011026"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
+   end,
+})
