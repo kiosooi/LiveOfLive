@@ -152,6 +152,37 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
+local antiNoRun = false
+
+-- Toggle
+Tab:CreateToggle({
+	Name = "anti no run when aiming rocket",
+	CurrentValue = false,
+	Flag = "AntiNoRunRocket",
+	Callback = function(Value)
+		antiNoRun = Value
+	end,
+})
+
+-- Enforcement loop
+RunService.Heartbeat:Connect(function()
+	if not antiNoRun then return end
+
+	local survivors = workspace:FindFirstChild("Survivors")
+	if not survivors then return end
+
+	local model = survivors:FindFirstChild(LocalPlayer.Name)
+	if not model then return end
+
+	local sprintStuff = model:FindFirstChild("SprintStuff")
+	if not sprintStuff then return end
+
+	local noRun = sprintStuff:FindFirstChild("NoRun")
+	if noRun and noRun:IsA("BoolValue") and noRun.Value == true then
+		noRun.Value = false
+	end
+end)
+
 -- ===== HP ESP ONLY (HUMANOID HEALTH) =====
 
 local hpESPEnabled = false
