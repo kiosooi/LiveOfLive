@@ -233,8 +233,8 @@ local args = {
     true,
     "Chezburger",
     "Chezburger",
-    "rbxassetid://81176509322805",
-    "rbxassetid://81176509322805"
+    "rbxassetid://11125881651",
+    "rbxassetid://11125881651"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
    end,
