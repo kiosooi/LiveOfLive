@@ -216,3 +216,47 @@ local args = {
 game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
    end,
 })
+
+local Section = Tab:CreateSection("Synergies")
+
+local Button = Tab:CreateButton({
+   Name = "ChezBurger man",
+   Callback = function()
+   local args = {
+    1,
+    "Chezburger",
+    "Chezburger"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("SurvActions"):FireServer(unpack(args))
+local args = {
+    7,
+    true,
+    "Chezburger",
+    "Chezburger",
+    "rbxassetid://81176509322805",
+    "rbxassetid://81176509322805"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "LoveShot",
+   Callback = function()
+   local args = {
+    1,
+    "Revolver",
+    "Coiltaker"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("SurvActions"):FireServer(unpack(args))
+local args = {
+    7,
+    true,
+    "Revolver",
+    "Coiltaker",
+    "rbxassetid://11125881651",
+    "rbxassetid://79847866387639"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
+   end,
+})
