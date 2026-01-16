@@ -260,3 +260,45 @@ local args = {
 game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
    end,
 })
+
+local Button = Tab:CreateButton({
+   Name = "CarePad",
+   Callback = function()
+   local args = {
+    1,
+    "Coiltaker",
+    "BonusPad"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("SurvActions"):FireServer(unpack(args))
+local args = {
+    7,
+    true,
+    "Coiltaker",
+    "BonusPad",
+    "rbxassetid://11125881651",
+    "rbxassetid://109145887371111"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Prankster",
+   Callback = function()
+   local args = {
+    1,
+    "Water Balloon",
+    "Taunt"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("SurvActions"):FireServer(unpack(args))
+local args = {
+    7,
+    true,
+    "Water Balloon",
+    "Taunt",
+    "rbxassetid://11125881651",
+    "rbxassetid://122433943011026"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
+   end,
+})
