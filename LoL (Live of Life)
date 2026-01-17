@@ -8,7 +8,7 @@ local player = Players.LocalPlayer
 local playerName = player.Name
 
 ------------------------------------------------------------
--- HELPERS (UNCHANGED LOGIC)
+-- HELPERS
 ------------------------------------------------------------
 local function findPlayerModel()
 	local killers = workspace:FindFirstChild("Killers")
@@ -49,26 +49,31 @@ local Window = Rayfield:CreateWindow({
 	Name = "LoL script",
 	LoadingTitle = "Blah blah blah",
 	LoadingSubtitle = "hihihihihihhihihihihihihi",
-	ConfigurationSaving = { Enabled = false }
+	ConfigurationSaving = {
+		Enabled = true,
+		FolderName = "LoLScript",
+		FileName = "Main"
+	}
 })
 
 local Tab = Window:CreateTab("Main", 0)
 
 ------------------------------------------------------------
--- TOGGLE: AUTO DOUBLEREGEN
+-- AUTO DOUBLEREGEN
 ------------------------------------------------------------
 local autoDoubleRegen = false
 
 Tab:CreateToggle({
 	Name = "Auto DoubleRegen",
 	CurrentValue = false,
+	Flag = "LoopDoubleRegen",
 	Callback = function(value)
 		autoDoubleRegen = value
 	end,
 })
 
 ------------------------------------------------------------
--- TEXTBOX: MAX STAMINA CHANGER
+-- MAX STAMINA INPUT
 ------------------------------------------------------------
 local maxStaminaValue = nil
 
@@ -76,6 +81,7 @@ Tab:CreateInput({
 	Name = "MaxStamina changer",
 	PlaceholderText = "Enter number...",
 	RemoveTextAfterFocusLost = false,
+	Flag = "MaxStaminaValue",
 	Callback = function(text)
 		local val = tonumber(text)
 		if not val then return end
@@ -89,106 +95,143 @@ Tab:CreateInput({
 })
 
 ------------------------------------------------------------
--- TOGGLE: ANTI STAMINA REGEN PAUSE
+-- ANTI STAMINA REGEN PAUSE
 ------------------------------------------------------------
 local antiPauseEnabled = false
 
 Tab:CreateToggle({
 	Name = "anti stamina regen pause",
 	CurrentValue = false,
+	Flag = "AntiRegenStop",
 	Callback = function(value)
 		antiPauseEnabled = value
 	end,
 })
 
 ------------------------------------------------------------
--- HEARTBEAT ENFORCEMENT (UNCHANGED)
+-- MAX STAMINA LOCK
 ------------------------------------------------------------
-RunService.Heartbeat:Connect(function()
-	-- Auto DoubleRegen
-	if autoDoubleRegen then
-		local dr = getSprintStuffChild("DoubleRegen", "BoolValue")
-		if dr and dr.Value == false then
-			dr.Value = true
-		end
-	end
-
-	-- Anti stamina regen pause
-	if antiPauseEnabled then
-		local disabled = getSprintStuffChild("DisabledStamina", "BoolValue")
-		if disabled and disabled.Value == true then
-			disabled.Value = false
-		end
-
-		local regen = getSprintStuffChild("RegenStamina", "BoolValue")
-		if regen and regen.Value == false then
-			regen.Value = true
-		end
-	end
-end)
-
--- state variable
 local lockMaxStamina = false
 
--- toggle
 Tab:CreateToggle({
 	Name = "Auto set MaxStamina",
 	CurrentValue = false,
+	Flag = "LoopMaxStam",
 	Callback = function(value)
 		lockMaxStamina = value
 	end,
 })
 
--- enforcement loop (add once if you don't already have one)
-RunService.Heartbeat:Connect(function()
-	if not lockMaxStamina then return end
-	if not maxStaminaValue then return end
+------------------------------------------------------------
+-- ANTI NO RUN WHEN AIMING ROCKET
+------------------------------------------------------------
 
-	local maxStamina = getSprintStuffChild("MaxStamina")
-	if maxStamina and (maxStamina:IsA("NumberValue") or maxStamina:IsA("IntValue")) then
-		if maxStamina.Value ~= maxStaminaValue then
-			maxStamina.Value = maxStaminaValue
-		end
-	end
-end)
-
+-- state
 local antiNoRun = false
 
--- Toggle
+-- toggle
 Tab:CreateToggle({
 	Name = "anti no run when aiming rocket",
 	CurrentValue = false,
 	Flag = "AntiNoRunRocket",
-	Callback = function(Value)
-		antiNoRun = Value
+	Callback = function(value)
+		antiNoRun = value
 	end,
 })
 
--- Enforcement loop
+-- HARD ENFORCEMENT LOOP
 RunService.Heartbeat:Connect(function()
 	if not antiNoRun then return end
 
+	-- try Survivors first
 	local survivors = workspace:FindFirstChild("Survivors")
-	if not survivors then return end
+	if survivors then
+		local model = survivors:FindFirstChild(player.Name)
+		if model then
+			local sprintStuff = model:FindFirstChild("SprintStuff")
+			if sprintStuff then
+				local noRun = sprintStuff:FindFirstChild("NoRun")
+				if noRun and noRun:IsA("BoolValue") and noRun.Value then
+					noRun.Value = false
+				end
+			end
+		end
+	end
 
-	local model = survivors:FindFirstChild(LocalPlayer.Name)
-	if not model then return end
-
-	local sprintStuff = model:FindFirstChild("SprintStuff")
-	if not sprintStuff then return end
-
-	local noRun = sprintStuff:FindFirstChild("NoRun")
-	if noRun and noRun:IsA("BoolValue") and noRun.Value == true then
-		noRun.Value = false
+	-- optional: also handle Killers if the game swaps teams
+	local killers = workspace:FindFirstChild("Killers")
+	if killers then
+		local model = killers:FindFirstChild(player.Name)
+		if model then
+			local sprintStuff = model:FindFirstChild("SprintStuff")
+			if sprintStuff then
+				local noRun = sprintStuff:FindFirstChild("NoRun")
+				if noRun and noRun:IsA("BoolValue") and noRun.Value then
+					noRun.Value = false
+				end
+			end
+		end
 	end
 end)
 
--- ===== HP ESP ONLY (HUMANOID HEALTH) =====
+------------------------------------------------------------
+-- HEARTBEAT ENFORCEMENT
+------------------------------------------------------------
+RunService.Heartbeat:Connect(function()
+	-- DoubleRegen
+	if autoDoubleRegen then
+		local dr = getSprintStuffChild("DoubleRegen", "BoolValue")
+		if dr and not dr.Value then
+			dr.Value = true
+		end
+	end
 
+	-- Anti regen pause
+	if antiPauseEnabled then
+		local disabled = getSprintStuffChild("DisabledStamina", "BoolValue")
+		if disabled and disabled.Value then
+			disabled.Value = false
+		end
+
+		local regen = getSprintStuffChild("RegenStamina", "BoolValue")
+		if regen and not regen.Value then
+			regen.Value = true
+		end
+	end
+
+	-- Max stamina lock
+	if lockMaxStamina and maxStaminaValue then
+		local maxStamina = getSprintStuffChild("MaxStamina")
+		if maxStamina and maxStamina.Value ~= maxStaminaValue then
+			maxStamina.Value = maxStaminaValue
+		end
+	end
+
+	-- Anti no run
+	if antiNoRun then
+		local survivors = workspace:FindFirstChild("Survivors")
+		if survivors then
+			local model = survivors:FindFirstChild(player.Name)
+			if model then
+				local sprintStuff = model:FindFirstChild("SprintStuff")
+				if sprintStuff then
+					local noRun = sprintStuff:FindFirstChild("NoRun")
+					if noRun and noRun:IsA("BoolValue") and noRun.Value then
+						noRun.Value = false
+					end
+				end
+			end
+		end
+	end
+end)
+
+------------------------------------------------------------
+-- HP ESP (HUMANOID HEALTH ONLY)
+------------------------------------------------------------
 local hpESPEnabled = false
 local hpEspCache = {}
 
-local function getPlayerTeam(plr)
+local function getPlayerTeamESP(plr)
 	if workspace:FindFirstChild("Killers") and workspace.Killers:FindFirstChild(plr.Name) then
 		return "Killer"
 	end
@@ -207,47 +250,35 @@ end
 
 local function createHpESP(plr)
 	if not hpESPEnabled then return end
-	if plr == LocalPlayer then return end
+	if plr == player then return end
 	if not plr.Character then return end
 
 	local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
 	local hum = plr.Character:FindFirstChildOfClass("Humanoid")
 	if not hrp or not hum then return end
 
-	local team = getPlayerTeam(plr)
+	local team = getPlayerTeamESP(plr)
 	if not team then return end
 
 	removeHpESP(plr)
 
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "HpESP"
-	billboard.Adornee = hrp
-	billboard.Size = UDim2.new(0, 200, 0, 40)
-	billboard.StudsOffset = Vector3.new(0, 3, 0)
-	billboard.AlwaysOnTop = true
+	local gui = Instance.new("BillboardGui")
+	gui.Adornee = hrp
+	gui.Size = UDim2.new(0, 200, 0, 40)
+	gui.StudsOffset = Vector3.new(0, 3, 0)
+	gui.AlwaysOnTop = true
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 1, 0)
+	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
-	label.TextStrokeTransparency = 0
 	label.TextScaled = true
+	label.TextStrokeTransparency = 0
 	label.Font = Enum.Font.SourceSansBold
+	label.TextColor3 = team == "Killer" and Color3.fromRGB(255,60,60) or Color3.fromRGB(60,255,60)
+	label.Parent = gui
 
-	label.TextColor3 = team == "Killer"
-		and Color3.fromRGB(255, 60, 60)
-		or Color3.fromRGB(60, 255, 60)
-
-	label.Text = "HP: " .. math.floor(hum.Health)
-	label.Parent = billboard
-
-	billboard.Parent = game.CoreGui
-	hpEspCache[plr] = billboard
-end
-
-local function refreshHpESP()
-	for _, plr in ipairs(Players:GetPlayers()) do
-		createHpESP(plr)
-	end
+	gui.Parent = game.CoreGui
+	hpEspCache[plr] = gui
 end
 
 RunService.Heartbeat:Connect(function()
@@ -261,114 +292,17 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-task.spawn(function()
-	while true do
-		if hpESPEnabled then
-			refreshHpESP()
-		end
-		task.wait(1)
-	end
-end)
-
 Tab:CreateToggle({
 	Name = "HP ESP",
 	CurrentValue = false,
 	Flag = "hp_esp",
-	Callback = function(Value)
-		hpESPEnabled = Value
-		if Value then
-			refreshHpESP()
-		else
+	Callback = function(val)
+		hpESPEnabled = val
+		if not val then
 			for _, gui in pairs(hpEspCache) do
 				if gui then gui:Destroy() end
 			end
 			table.clear(hpEspCache)
-		end
-	end
-})
-
--- ===== HIGHLIGHT ESP =====
-
-local espEnabled = false
-local espCache = {}
-
-local function removeESP(plr)
-	if espCache[plr] then
-		espCache[plr]:Destroy()
-		espCache[plr] = nil
-	end
-end
-
-local function getPlayerTeam(plr)
-	if workspace:FindFirstChild("Killers") and workspace.Killers:FindFirstChild(plr.Name) then
-		return "Killer"
-	end
-	if workspace:FindFirstChild("Survivors") and workspace.Survivors:FindFirstChild(plr.Name) then
-		return "Survivor"
-	end
-	return nil
-end
-
-local function applyESPToPlayer(plr)
-	if not espEnabled then return end
-	if plr == LocalPlayer then return end
-	if not plr.Character then return end
-
-	removeESP(plr)
-
-	local team = getPlayerTeam(plr)
-	if not team then return end
-
-	local hl = Instance.new("Highlight")
-	hl.Adornee = plr.Character
-	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	hl.FillTransparency = 0.35
-	hl.OutlineTransparency = 0
-
-	if team == "Killer" then
-		hl.FillColor = Color3.fromRGB(255, 60, 60)
-		hl.OutlineColor = Color3.fromRGB(255, 0, 0)
-	else
-		hl.FillColor = Color3.fromRGB(60, 255, 60)
-		hl.OutlineColor = Color3.fromRGB(0, 255, 0)
-	end
-
-	hl.Parent = game.CoreGui
-	espCache[plr] = hl
-end
-
-local function refreshESP()
-	for _, plr in ipairs(Players:GetPlayers()) do
-		applyESPToPlayer(plr)
-	end
-end
-
-local function clearESP()
-	for _, hl in pairs(espCache) do
-		if hl then hl:Destroy() end
-	end
-	table.clear(espCache)
-end
-
-task.spawn(function()
-	while true do
-		if espEnabled then
-			refreshESP()
-		end
-		task.wait(1)
-	end
-end)
-
-Tab:CreateToggle({
-	Name = "ESP",
-	CurrentValue = false,
-	Flag = "esp",
-	Callback = function(Value)
-		espEnabled = Value
-		if Value then
-			refreshESP()
-		else
-			clearESP()
 		end
 	end
 })
