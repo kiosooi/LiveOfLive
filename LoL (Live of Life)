@@ -225,10 +225,21 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- ===== HP ESP =====
+-- ===== HP ESP (HUMANOID HEALTH ONLY) =====
 
 local hpESPEnabled = false
 local hpEspCache = {}
+
+-- TEAM CHECK (DEFINED ONCE, USED BELOW)
+local function getTeamFromWorkspace(plr)
+	if workspace:FindFirstChild("Killers") and workspace.Killers:FindFirstChild(plr.Name) then
+		return "Killer"
+	end
+	if workspace:FindFirstChild("Survivors") and workspace.Survivors:FindFirstChild(plr.Name) then
+		return "Survivor"
+	end
+	return nil
+end
 
 local function removeHpESP(plr)
 	if hpEspCache[plr] then
@@ -282,8 +293,10 @@ local function refreshHpESP()
 	end
 end
 
+-- live HP update
 RunService.Heartbeat:Connect(function()
 	if not hpESPEnabled then return end
+
 	for plr, gui in pairs(hpEspCache) do
 		local hum = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
 		local label = gui and gui:FindFirstChildOfClass("TextLabel")
@@ -293,6 +306,7 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
+-- safety refresh loop
 task.spawn(function()
 	while true do
 		if hpESPEnabled then
@@ -302,6 +316,7 @@ task.spawn(function()
 	end
 end)
 
+-- RAYFIELD TOGGLE
 Tab:CreateToggle({
 	Name = "HP ESP",
 	CurrentValue = false,
