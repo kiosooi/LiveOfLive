@@ -225,21 +225,10 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
-------------------------------------------------------------
--- HP ESP (HUMANOID HEALTH ONLY)
-------------------------------------------------------------
+-- ===== HP ESP =====
+
 local hpESPEnabled = false
 local hpEspCache = {}
-
-local function getPlayerTeamESP(plr)
-	if workspace:FindFirstChild("Killers") and workspace.Killers:FindFirstChild(plr.Name) then
-		return "Killer"
-	end
-	if workspace:FindFirstChild("Survivors") and workspace.Survivors:FindFirstChild(plr.Name) then
-		return "Survivor"
-	end
-	return nil
-end
 
 local function removeHpESP(plr)
 	if hpEspCache[plr] then
@@ -257,28 +246,40 @@ local function createHpESP(plr)
 	local hum = plr.Character:FindFirstChildOfClass("Humanoid")
 	if not hrp or not hum then return end
 
-	local team = getPlayerTeamESP(plr)
+	local team = getTeamFromWorkspace(plr)
 	if not team then return end
 
 	removeHpESP(plr)
 
-	local gui = Instance.new("BillboardGui")
-	gui.Adornee = hrp
-	gui.Size = UDim2.new(0, 200, 0, 40)
-	gui.StudsOffset = Vector3.new(0, 3, 0)
-	gui.AlwaysOnTop = true
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "HpESP"
+	billboard.Adornee = hrp
+	billboard.Size = UDim2.new(0, 200, 0, 40)
+	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.AlwaysOnTop = true
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.fromScale(1, 1)
+	label.Size = UDim2.new(1, 0, 1, 0)
 	label.BackgroundTransparency = 1
-	label.TextScaled = true
 	label.TextStrokeTransparency = 0
+	label.TextScaled = true
 	label.Font = Enum.Font.SourceSansBold
-	label.TextColor3 = team == "Killer" and Color3.fromRGB(255,60,60) or Color3.fromRGB(60,255,60)
-	label.Parent = gui
 
-	gui.Parent = game.CoreGui
-	hpEspCache[plr] = gui
+	label.TextColor3 = team == "Killer"
+		and Color3.fromRGB(255, 60, 60)
+		or Color3.fromRGB(60, 255, 60)
+
+	label.Text = "HP: " .. math.floor(hum.Health)
+	label.Parent = billboard
+
+	billboard.Parent = game.CoreGui
+	hpEspCache[plr] = billboard
+end
+
+local function refreshHpESP()
+	for _, plr in ipairs(Players:GetPlayers()) do
+		createHpESP(plr)
+	end
 end
 
 RunService.Heartbeat:Connect(function()
@@ -292,19 +293,116 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
+task.spawn(function()
+	while true do
+		if hpESPEnabled then
+			refreshHpESP()
+		end
+		task.wait(1)
+	end
+end)
+
 Tab:CreateToggle({
 	Name = "HP ESP",
 	CurrentValue = false,
-	Flag = "hp_esp",
-	Callback = function(val)
-		hpESPEnabled = val
-		if not val then
+	Flag = "HpESP",
+	Callback = function(Value)
+		hpESPEnabled = Value
+		if Value then
+			refreshHpESP()
+		else
 			for _, gui in pairs(hpEspCache) do
 				if gui then gui:Destroy() end
 			end
 			table.clear(hpEspCache)
 		end
+	end,
+})
+
+-- ===== HIGHLIGHT ESP =====
+
+local espEnabled = false
+local espCache = {}
+
+local function getTeamFromWorkspace(plr)
+	if workspace:FindFirstChild("Killers") and workspace.Killers:FindFirstChild(plr.Name) then
+		return "Killer"
 	end
+	if workspace:FindFirstChild("Survivors") and workspace.Survivors:FindFirstChild(plr.Name) then
+		return "Survivor"
+	end
+	return nil
+end
+
+local function removeESP(plr)
+	if espCache[plr] then
+		espCache[plr]:Destroy()
+		espCache[plr] = nil
+	end
+end
+
+local function applyESP(plr)
+	if not espEnabled then return end
+	if plr == player then return end
+	if not plr.Character then return end
+
+	local team = getTeamFromWorkspace(plr)
+	if not team then return end
+
+	removeESP(plr)
+
+	local hl = Instance.new("Highlight")
+	hl.Adornee = plr.Character
+	hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	hl.FillTransparency = 0.35
+	hl.OutlineTransparency = 0
+
+	if team == "Killer" then
+		hl.FillColor = Color3.fromRGB(255, 60, 60)
+		hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+	else
+		hl.FillColor = Color3.fromRGB(60, 255, 60)
+		hl.OutlineColor = Color3.fromRGB(0, 255, 0)
+	end
+
+	hl.Parent = game.CoreGui
+	espCache[plr] = hl
+end
+
+local function refreshESP()
+	for _, plr in ipairs(Players:GetPlayers()) do
+		applyESP(plr)
+	end
+end
+
+local function clearESP()
+	for _, hl in pairs(espCache) do
+		if hl then hl:Destroy() end
+	end
+	table.clear(espCache)
+end
+
+task.spawn(function()
+	while true do
+		if espEnabled then
+			refreshESP()
+		end
+		task.wait(1)
+	end
+end)
+
+Tab:CreateToggle({
+	Name = "ESP (Highlight)",
+	CurrentValue = false,
+	Flag = "HighlightESP",
+	Callback = function(Value)
+		espEnabled = Value
+		if Value then
+			refreshESP()
+		else
+			clearESP()
+		end
+	end,
 })
 
 local Section = Tab:CreateSection("Ability decks")
