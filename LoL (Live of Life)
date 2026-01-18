@@ -485,6 +485,27 @@ game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(un
    end,
 })
 
+local Button = Tab:CreateButton({
+   Name = "Sneaker stunner",
+   Callback = function()
+   local args = {
+    1,
+    "Belly Slide",
+    "Punch"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("SurvActions"):FireServer(unpack(args))
+local args = {
+    7,
+    true,
+    "Belly Slide",
+    "Punch",
+    "rbxassetid://90899217547396",
+    "rbxassetid://73130054435684"
+}
+game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
+   end,
+})
+
 local Section = Tab:CreateSection("Synergies")
 
 local Button = Tab:CreateButton({
