@@ -500,7 +500,7 @@ local args = {
     "Belly Slide",
     "Punch",
     "rbxassetid://90899217547396",
-    "rbxassetid://73130054435684"
+    "rbxassetid://11125881651"
 }
 game:GetService("ReplicatedStorage"):WaitForChild("PlayerActions"):FireServer(unpack(args))
    end,
